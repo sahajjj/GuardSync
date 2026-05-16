@@ -24,7 +24,13 @@ app.use((req, res, next) => {
 });
 
 app.use(cors({
-  origin: [process.env.FRONTEND_URL || 'http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:3001'],
+  origin: [
+    process.env.FRONTEND_URL || 'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'http://localhost:3001',
+    'https://guard-sync-taupe.vercel.app',
+    'https://guardsync-app.vercel.app'
+  ],
   credentials: true
 }));
 

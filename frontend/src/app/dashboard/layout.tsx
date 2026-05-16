@@ -2,7 +2,7 @@
 import { ReactNode, useState, useEffect } from 'react';
 import { useAuthStore } from '../../store/authStore';
 import { useRouter, usePathname } from 'next/navigation';
-import { LogOut, Home, Users, MapPin, FileText, Languages, Building, Shield, Sun, Moon } from 'lucide-react';
+import { LogOut, Home, Users, MapPin, FileText, Languages, Building, Shield, Sun, Moon, Menu, X } from 'lucide-react';
 import Link from 'next/link';
 import { useLanguage } from '../LanguageContext';
 import { useTheme } from '../ThemeProvider';
@@ -14,6 +14,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const { toggleLang } = useLanguage();
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const [isSidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -47,15 +48,26 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       {/* Background Grid */}
       <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(0,0,0,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.03)_1px,transparent_1px)] dark:bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:32px_32px]"></div>
 
+      {/* Overlay for mobile sidebar */}
+      {isSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 md:hidden backdrop-blur-sm transition-opacity"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar — fixed full height */}
-      <div className="w-64 bg-white dark:bg-black flex flex-col border-r border-black/10 dark:border-white/10 h-screen shrink-0 relative z-10">
-        <div className="p-8 border-b border-black/10 dark:border-white/10">
+      <div className={`absolute inset-y-0 left-0 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0 transition-transform duration-300 ease-in-out w-64 bg-white dark:bg-black flex flex-col border-r border-black/10 dark:border-white/10 h-screen shrink-0 z-50`}>
+        <div className="p-6 md:p-8 border-b border-black/10 dark:border-white/10 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3">
             <div className="w-8 h-8 bg-black dark:bg-white flex items-center justify-center rounded-sm">
               <Shield size={16} className="text-white dark:text-black" />
             </div>
             <h2 className="text-xl font-bold tracking-tight text-black dark:text-white">GuardSync</h2>
           </Link>
+          <button className="md:hidden p-2" onClick={() => setSidebarOpen(false)}>
+            <X size={20} />
+          </button>
         </div>
         
         <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
@@ -65,6 +77,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               <Link 
                 key={item.href}
                 href={item.href} 
+                onClick={() => setSidebarOpen(false)}
                 className={`flex items-center gap-3 px-4 py-3 rounded-sm transition-colors text-sm font-bold uppercase tracking-widest ${
                   isActive 
                     ? 'bg-black dark:bg-white text-white dark:text-black shadow-lg shadow-black/10 dark:shadow-none' 
@@ -97,11 +110,16 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       {/* Main Content */}
       <div className="flex-1 flex flex-col h-screen overflow-hidden relative z-10">
         {/* Top Header */}
-        <div className="h-20 bg-white dark:bg-black border-b border-black/10 dark:border-white/10 flex items-center justify-between px-8 shrink-0">
-          <div className="text-xs font-bold uppercase tracking-widest text-black/40 dark:text-white/40">
-            System Status: <span className="text-emerald-600 dark:text-emerald-400 ml-1">Online</span>
-          </div>
+        <div className="h-20 bg-white dark:bg-black border-b border-black/10 dark:border-white/10 flex items-center justify-between px-4 md:px-8 shrink-0">
           <div className="flex items-center gap-4">
+            <button className="md:hidden p-2 rounded-sm hover:bg-black/5 dark:hover:bg-white/5" onClick={() => setSidebarOpen(true)}>
+              <Menu size={20} />
+            </button>
+            <div className="hidden sm:block text-xs font-bold uppercase tracking-widest text-black/40 dark:text-white/40">
+              System Status: <span className="text-emerald-600 dark:text-emerald-400 ml-1">Online</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 md:gap-4">
             <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="p-2 border border-black/10 dark:border-white/10 rounded-sm hover:bg-black/5 dark:hover:bg-white/5 text-black dark:text-white transition-colors" title="Toggle Theme">
               {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
             </button>
@@ -116,7 +134,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         </div>
         
         {/* Page Content */}
-        <div className="flex-1 p-8 overflow-y-auto">
+        <div className="flex-1 p-4 md:p-8 overflow-y-auto">
           <div className="max-w-[1440px] mx-auto h-full">
             {children}
           </div>

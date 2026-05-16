@@ -2,12 +2,14 @@
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '../../../store/authStore';
 import { API_URL } from '../../../lib/constants';
+import { Pencil, Trash2 } from 'lucide-react';
 
 export default function SitesPage() {
   const { token } = useAuthStore();
   const [sites, setSites] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
   const [showModal, setShowModal] = useState(false);
+  const [editingSite, setEditingSite] = useState<any>(null);
   const [formData, setFormData] = useState({ name: '', address: '', latitude: '', longitude: '', radius: '50', clientId: '' });
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -59,6 +61,27 @@ export default function SitesPage() {
     return null;
   };
 
+  const openCreateModal = () => {
+    setEditingSite(null);
+    setFormData({ name: '', address: '', latitude: '', longitude: '', radius: '50', clientId: '' });
+    setShowModal(true);
+    setError('');
+  };
+
+  const openEditModal = (site: any) => {
+    setEditingSite(site);
+    setFormData({
+      name: site.name,
+      address: site.address,
+      latitude: String(site.latitude),
+      longitude: String(site.longitude),
+      radius: String(site.radius),
+      clientId: site.clientId || ''
+    });
+    setShowModal(true);
+    setError('');
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -68,8 +91,11 @@ export default function SitesPage() {
 
     setSubmitting(true);
     try {
-      const res = await fetch(`${API_URL}/sites`, {
-        method: 'POST',
+      const url = editingSite ? `${API_URL}/sites/${editingSite.id}` : `${API_URL}/sites`;
+      const method = editingSite ? 'PUT' : 'POST';
+
+      const res = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({
           name: formData.name.trim(),
@@ -82,19 +108,43 @@ export default function SitesPage() {
       });
       if (res.ok) {
         setShowModal(false);
+        setEditingSite(null);
         setFormData({ name: '', address: '', latitude: '', longitude: '', radius: '50', clientId: '' });
         setError('');
-        setSuccess(`[SYS_OK] Site "${formData.name.trim()}" established in database.`);
+        setSuccess(editingSite 
+          ? `[SYS_OK] Site "${formData.name.trim()}" updated successfully.`
+          : `[SYS_OK] Site "${formData.name.trim()}" established in database.`
+        );
         setTimeout(() => setSuccess(''), 4000);
         fetchSites();
       } else {
         const data = await res.json();
-        setError(data.error || 'Failed to create site');
+        setError(data.error || 'Operation failed');
       }
     } catch (e) {
       setError('Network error.');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleDelete = async (site: any) => {
+    if (!confirm(`⚠️ DELETE SITE "${site.name}"?\n\nThis will permanently remove all attendance records, reports, and deployments linked to this site. This action cannot be undone.`)) return;
+    
+    try {
+      const res = await fetch(`${API_URL}/sites/${site.id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        setSuccess(`[SYS_OK] Site "${site.name}" terminated.`);
+        setTimeout(() => setSuccess(''), 4000);
+        fetchSites();
+      } else {
+        setError('Failed to delete site');
+      }
+    } catch (e) {
+      setError('Network error.');
     }
   };
 
@@ -105,7 +155,7 @@ export default function SitesPage() {
           <h1 className="text-3xl font-black uppercase tracking-tight text-black dark:text-white">Geographic <span className="text-black/30 dark:text-white/30">Sites</span></h1>
           <p className="text-[10px] text-black/50 dark:text-white/50 font-bold uppercase tracking-widest mt-2">{sites.length} Active Operational Zones</p>
         </div>
-        <button onClick={() => { setShowModal(true); setError(''); }} className="bg-black dark:bg-white text-white dark:text-black px-6 py-3 rounded-sm hover:bg-black/80 dark:hover:bg-white/80 hover:-translate-y-0.5 shadow-lg shadow-black/10 dark:shadow-none transition-all font-bold text-xs uppercase tracking-widest">
+        <button onClick={openCreateModal} className="bg-black dark:bg-white text-white dark:text-black px-6 py-3 rounded-sm hover:bg-black/80 dark:hover:bg-white/80 hover:-translate-y-0.5 shadow-lg shadow-black/10 dark:shadow-none transition-all font-bold text-xs uppercase tracking-widest">
           + Initialize Site
         </button>
       </div>
@@ -128,14 +178,15 @@ export default function SitesPage() {
               <tr>
                 <th className="px-6 py-4">Site ID</th>
                 <th className="px-6 py-4">Designation</th>
-                <th className="px-6 py-4">Geographic Coordinates</th>
-                <th className="px-6 py-4">Assigned Client</th>
-                <th className="px-6 py-4">Geofence Radius</th>
+                <th className="px-6 py-4 hidden md:table-cell">Geographic Coordinates</th>
+                <th className="px-6 py-4 hidden lg:table-cell">Assigned Client</th>
+                <th className="px-6 py-4 hidden md:table-cell">Geofence Radius</th>
+                <th className="px-6 py-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-black/5 dark:divide-white/5">
               {sites.length === 0 ? (
-                <tr><td colSpan={5} className="px-6 py-16 text-center text-[10px] font-bold uppercase tracking-widest text-black/40 dark:text-white/40">No zones configured. Initialize first site.</td></tr>
+                <tr><td colSpan={6} className="px-6 py-16 text-center text-[10px] font-bold uppercase tracking-widest text-black/40 dark:text-white/40">No zones configured. Initialize first site.</td></tr>
               ) : (
                 sites.map(s => (
                   <tr key={s.id} className="hover:bg-[#f8f9fa] dark:hover:bg-[#111] transition-colors group">
@@ -144,10 +195,10 @@ export default function SitesPage() {
                       {s.name}
                       <div className="text-[10px] font-mono text-black/40 dark:text-white/40 mt-1">{s.address}</div>
                     </td>
-                    <td className="px-6 py-4 font-mono text-xs">
+                    <td className="px-6 py-4 font-mono text-xs hidden md:table-cell">
                       {s.latitude}, {s.longitude}
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4 hidden lg:table-cell">
                       {s.clientId ? (
                         <span className="px-2 py-1 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-sm text-[10px] font-mono font-bold tracking-widest text-black dark:text-white">
                           {clients.find(c => c.id === s.clientId)?.name || 'UNKNOWN'}
@@ -156,7 +207,25 @@ export default function SitesPage() {
                         <span className="text-[10px] font-bold uppercase tracking-widest text-black/30 dark:text-white/30">Unassigned</span>
                       )}
                     </td>
-                    <td className="px-6 py-4 font-mono text-xs font-bold text-black/60 dark:text-white/60">{s.radius} METERS</td>
+                    <td className="px-6 py-4 font-mono text-xs font-bold text-black/60 dark:text-white/60 hidden md:table-cell">{s.radius} METERS</td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button 
+                          onClick={() => openEditModal(s)} 
+                          className="p-2 rounded-sm border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 text-black/60 dark:text-white/60 hover:text-black dark:hover:text-white transition-colors"
+                          title="Edit Site"
+                        >
+                          <Pencil size={14} />
+                        </button>
+                        <button 
+                          onClick={() => handleDelete(s)} 
+                          className="p-2 rounded-sm border border-red-200 dark:border-red-900/50 hover:bg-red-50 dark:hover:bg-red-950/30 text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition-colors"
+                          title="Delete Site"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))
               )}
@@ -167,10 +236,10 @@ export default function SitesPage() {
 
       {showModal && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setShowModal(false)}>
-          <div className="bg-white dark:bg-black p-8 rounded-sm shadow-2xl w-full max-w-md border border-black/10 dark:border-white/10 relative" onClick={e => e.stopPropagation()}>
-            <div className="absolute top-0 left-0 w-full h-1 bg-black dark:bg-white"></div>
-            <h2 className="text-2xl font-black uppercase tracking-tight mb-2 text-black dark:text-white">Initialize Site</h2>
-            <p className="text-[10px] text-black/50 dark:text-white/50 font-bold uppercase tracking-widest mb-8">Establish geofenced operational zone</p>
+          <div className="bg-white dark:bg-black p-8 rounded-sm shadow-2xl w-full max-w-md border border-black/10 dark:border-white/10 relative max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className={`absolute top-0 left-0 w-full h-1 ${editingSite ? 'bg-amber-500' : 'bg-black dark:bg-white'}`}></div>
+            <h2 className="text-2xl font-black uppercase tracking-tight mb-2 text-black dark:text-white">{editingSite ? 'Modify Site' : 'Initialize Site'}</h2>
+            <p className="text-[10px] text-black/50 dark:text-white/50 font-bold uppercase tracking-widest mb-8">{editingSite ? 'Update operational zone parameters' : 'Establish geofenced operational zone'}</p>
 
             {error && (
               <div className="mb-6 p-4 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400 rounded-sm text-xs font-mono font-bold uppercase">
@@ -216,9 +285,9 @@ export default function SitesPage() {
               </div>
               
               <div className="flex justify-end gap-4 mt-8 pt-6 border-t border-black/10 dark:border-white/10">
-                <button type="button" onClick={() => { setShowModal(false); setError(''); }} className="px-6 py-3 text-black/50 dark:text-white/50 hover:text-black dark:hover:text-white font-bold uppercase text-[10px] tracking-widest transition-colors">Abort</button>
-                <button type="submit" disabled={submitting} className="px-6 py-3 bg-black dark:bg-white text-white dark:text-black rounded-sm hover:bg-black/80 dark:hover:bg-white/80 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-bold uppercase text-[10px] tracking-widest shadow-lg shadow-black/10 dark:shadow-none">
-                  {submitting ? 'Executing...' : 'Establish Site'}
+                <button type="button" onClick={() => { setShowModal(false); setError(''); setEditingSite(null); }} className="px-6 py-3 text-black/50 dark:text-white/50 hover:text-black dark:hover:text-white font-bold uppercase text-[10px] tracking-widest transition-colors">Abort</button>
+                <button type="submit" disabled={submitting} className={`px-6 py-3 rounded-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed font-bold uppercase text-[10px] tracking-widest shadow-lg shadow-black/10 dark:shadow-none ${editingSite ? 'bg-amber-500 hover:bg-amber-600 text-white' : 'bg-black dark:bg-white text-white dark:text-black hover:bg-black/80 dark:hover:bg-white/80'}`}>
+                  {submitting ? 'Executing...' : editingSite ? 'Update Site' : 'Establish Site'}
                 </button>
               </div>
             </form>

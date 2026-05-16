@@ -1,0 +1,133 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  phone     String   @unique
+  role      String   @default("GUARD")
+  photoUrl  String?
+  language  String   @default("en")
+  theme     String   @default("light")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  attendances   Attendance[]
+  reports       Report[]
+  deployments   Deployment[]
+  notifications Notification[]
+  visitorLogs   VisitorLog[]
+  clientSites   Site[]         @relation("ClientSites")
+  complaints    Complaint[]
+}
+
+model Site {
+  id        String   @id @default(uuid())
+  name      String
+  address   String
+  latitude  Float
+  longitude Float
+  radius    Float    // In meters
+  clientId  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  client      User?       @relation("ClientSites", fields: [clientId], references: [id])
+  deployments Deployment[]
+  attendances Attendance[]
+  reports     Report[]
+  visitorLogs VisitorLog[]
+  complaints  Complaint[]
+}
+
+model Complaint {
+  id        String   @id @default(uuid())
+  subject   String
+  content   String
+  status    String   @default("OPEN") // OPEN, IN_PROGRESS, RESOLVED
+  clientId  String
+  siteId    String
+  createdAt DateTime @default(now())
+
+  client User @relation(fields: [clientId], references: [id])
+  site   Site @relation(fields: [siteId], references: [id])
+}
+
+model Deployment {
+  id         String   @id @default(uuid())
+  siteId     String
+  guardId    String
+  shiftStart String   // e.g., "09:00"
+  shiftEnd   String   // e.g., "17:00"
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  site  Site @relation(fields: [siteId], references: [id])
+  guard User @relation(fields: [guardId], references: [id])
+}
+
+model Attendance {
+  id               String           @id @default(uuid())
+  guardId          String
+  siteId           String
+  checkInTime      DateTime
+  checkOutTime     DateTime?
+  checkInLat       Float
+  checkInLng       Float
+  checkOutLat      Float?
+  checkOutLng      Float?
+  selfieUrl        String?
+  checkOutSelfieUrl String?
+  status           String           @default("PRESENT")
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  guard User @relation(fields: [guardId], references: [id])
+  site  Site @relation(fields: [siteId], references: [id])
+}
+
+model Report {
+  id        String     @id @default(uuid())
+  type      String     @default("GENERAL")
+  content   String
+  imageUrl  String?
+  authorId  String
+  siteId    String
+  timestamp DateTime   @default(now())
+
+  author User @relation(fields: [authorId], references: [id])
+  site   Site @relation(fields: [siteId], references: [id])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  message   String
+  read      Boolean  @default(false)
+  type      String   // e.g., "INFO", "ALERT"
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model VisitorLog {
+  id           String    @id @default(uuid())
+  siteId       String
+  guardId      String
+  name         String
+  purpose      String
+  vehicleNum   String?
+  checkInTime  DateTime  @default(now())
+  checkOutTime DateTime?
+  
+  site   Site @relation(fields: [siteId], references: [id])
+  guard  User @relation(fields: [guardId], references: [id])
+}

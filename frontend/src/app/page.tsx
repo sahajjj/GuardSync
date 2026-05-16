@@ -351,7 +351,7 @@ export default function HomePage() {
                 Architecture for Security Operations. © 2026
               </p>
               <a href="https://github.com/sahajjj" target="_blank" rel="noopener noreferrer" className="text-[10px] font-bold uppercase tracking-widest text-black/30 dark:text-white/30 hover:text-emerald-500 dark:hover:text-emerald-400 transition-colors">
-                Engineered by Sahaj
+                Engineered by Sahaj Sharma
               </a>
             </div>
             <div className="flex gap-6 text-xs font-bold uppercase tracking-widest">

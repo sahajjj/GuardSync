@@ -165,7 +165,7 @@ router.get('/users', async (req: Request, res: Response) => {
 
 // ── Delete User (Admin only) ──
 router.delete('/users/:id', async (req: Request, res: Response): Promise<void> => {
-  const { id } = req.params;
+  const id = req.params.id as string;
 
   // Verify JWT — only admins can delete
   const authHeader = req.headers.authorization;

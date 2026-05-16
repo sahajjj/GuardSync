@@ -326,7 +326,7 @@ export default function GuardApp() {
 
                   {faceMatchStatus === 'matched' && (
                     <button onClick={handleGetLocation} className={`w-full py-4 rounded-sm font-bold text-[10px] uppercase tracking-widest transition-all border ${location ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-900/50 text-emerald-700 dark:text-emerald-400' : 'bg-white dark:bg-black border-black/20 dark:border-white/20 text-black dark:text-white hover:border-black dark:hover:border-white'}`}>
-                      {location ? `[SYS_OK] TELEMETRY LOCKED` : 'ACQUIRE GPS TELEMETRY'}
+                      {location ? `[SYS_OK] TELEMETRY LOCKED (${location.lat.toFixed(6)}, ${location.lng.toFixed(6)})` : 'ACQUIRE GPS TELEMETRY'}
                     </button>
                   )}
 

@@ -57,7 +57,7 @@ export default function SitesPage() {
     if (isNaN(lat) || lat < -90 || lat > 90) return 'Latitude must be between -90 and 90';
     if (isNaN(lng) || lng < -180 || lng > 180) return 'Longitude must be between -180 and 180';
     const radius = parseFloat(formData.radius);
-    if (isNaN(radius) || radius < 10 || radius > 5000) return 'Radius must be between 10 and 5000 meters';
+    if (isNaN(radius) || radius < 10 || radius > 20000) return 'Radius must be between 10 and 20000 meters';
     return null;
   };
 
@@ -268,7 +268,7 @@ export default function SitesPage() {
               </div>
               <div>
                 <label className="block text-[10px] font-bold uppercase tracking-widest text-black/60 dark:text-white/60 mb-2">Geofence Radius <span className="font-mono text-black/30 dark:text-white/30 ml-1">(METERS)</span></label>
-                <input required type="number" min="10" max="5000" placeholder="50" className="w-full p-4 border border-black/20 dark:border-white/20 rounded-sm focus:ring-0 focus:border-black dark:focus:border-white outline-none bg-white dark:bg-black text-black dark:text-white font-mono tracking-wider transition-colors" value={formData.radius} onChange={e => setFormData({...formData, radius: e.target.value})} />
+                <input required type="number" min="10" max="20000" placeholder="50" className="w-full p-4 border border-black/20 dark:border-white/20 rounded-sm focus:ring-0 focus:border-black dark:focus:border-white outline-none bg-white dark:bg-black text-black dark:text-white font-mono tracking-wider transition-colors" value={formData.radius} onChange={e => setFormData({...formData, radius: e.target.value})} />
               </div>
               <div>
                 <label className="block text-[10px] font-bold uppercase tracking-widest text-black/60 dark:text-white/60 mb-2">Assigned Client Entity</label>

@@ -4,7 +4,7 @@ import { useAuthStore } from '../../store/authStore';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { MapPin, CheckCircle, LogOut, Languages, Clock, AlertTriangle, Navigation, ShieldAlert, Crosshair, Sun, Moon } from 'lucide-react';
-import { API_URL } from '../../lib/constants';
+import { API_URL, API_BASE_URL } from '../../lib/constants';
 import { useLanguage } from '../LanguageContext';
 import { useTheme } from '../ThemeProvider';
 import CameraCapture from '../components/CameraCapture';
@@ -114,7 +114,7 @@ export default function GuardApp() {
     try {
       setFaceMatchMsg('ANALYZING BIOMETRICS...');
       const faceapi = await import('@vladmandic/face-api');
-      const profileRes = await fetch(`${API_URL}/../..${user.photoUrl}`);
+      const profileRes = await fetch(`${API_BASE_URL}${user.photoUrl}`);
       const profileBlob = await profileRes.blob();
       const profileImg = await faceapi.bufferToImage(profileBlob);
       const selfieImg = await faceapi.bufferToImage(capturedBlob);

@@ -346,9 +346,14 @@ export default function HomePage() {
               </div>
               <span className="font-bold tracking-tight text-sm">GuardSync</span>
             </div>
-            <p className="text-xs font-bold uppercase tracking-widest text-black/40 dark:text-white/40 text-center">
-              Architecture for Security Operations. © 2026
-            </p>
+            <div className="flex flex-col items-center">
+              <p className="text-xs font-bold uppercase tracking-widest text-black/40 dark:text-white/40 text-center mb-1">
+                Architecture for Security Operations. © 2026
+              </p>
+              <a href="https://github.com/sahajjj" target="_blank" rel="noopener noreferrer" className="text-[10px] font-bold uppercase tracking-widest text-black/30 dark:text-white/30 hover:text-emerald-500 dark:hover:text-emerald-400 transition-colors">
+                Engineered by Sahaj
+              </a>
+            </div>
             <div className="flex gap-6 text-xs font-bold uppercase tracking-widest">
               <Link href="/login" className="hover:text-black dark:hover:text-white transition-colors relative after:absolute after:bottom-[-2px] after:left-0 after:w-0 after:h-px after:bg-black dark:after:bg-white hover:after:w-full after:transition-all">Portal Access</Link>
             </div>

@@ -339,7 +339,7 @@ export default function GuardApp() {
           <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] dark:bg-[linear-gradient(rgba(0,0,0,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.05)_1px,transparent_1px)] bg-[size:16px_16px] pointer-events-none"></div>
           <Crosshair size={24} className="mx-auto mb-4 opacity-50 relative z-10" />
           <Link href="/">
-            <h1 className="text-2xl font-black uppercase tracking-widest relative z-10 hover:opacity-80 transition-opacity">GuardSync</h1>
+            <h1 className="text-2xl font-black uppercase tracking-widest relative z-10 hover:opacity-80 transition-opacity">GuardSync v1.1</h1>
           </Link>
           <p className="text-[10px] mt-2 font-mono text-white/50 dark:text-black/50 relative z-10">OP: {user.name.toUpperCase()} // L1</p>
         </div>

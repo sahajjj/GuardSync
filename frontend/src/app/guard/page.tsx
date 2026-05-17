@@ -53,15 +53,18 @@ export default function GuardApp() {
     const loadModels = async () => {
       try {
         const faceapi = await import('@vladmandic/face-api');
-        const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/';
+        const MODEL_URL = '/models';
         await Promise.all([
+          faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
           faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL),
           faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
           faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
         ]);
         setModelsLoaded(true);
+        console.log('[FaceAPI] All models loaded successfully');
       } catch (e) {
-        console.error('Failed to load face-api models', e);
+        console.error('[FaceAPI] Failed to load models:', e);
+        setFaceMatchMsg('[ERR] BIOMETRIC ENGINE FAILED TO INITIALIZE');
       }
     };
     loadModels();
@@ -110,20 +113,82 @@ export default function GuardApp() {
   if (!mounted || !user || user.role !== 'GUARD') return null;
 
   const verifyFaceMatch = async (capturedBlob: Blob): Promise<boolean> => {
-    if (!user?.photoUrl) return false;
+    if (!user?.photoUrl) {
+      setFaceMatchMsg('[ERR] NO PROFILE PHOTO ON FILE');
+      return false;
+    }
+    if (!modelsLoaded) {
+      setFaceMatchMsg('[ERR] BIOMETRIC ENGINE NOT READY — RELOAD PAGE');
+      return false;
+    }
     try {
       setFaceMatchMsg('ANALYZING BIOMETRICS...');
       const faceapi = await import('@vladmandic/face-api');
+
+      // Fetch the registered profile photo
       const profileRes = await fetch(`${API_BASE_URL}${user.photoUrl}`);
+      if (!profileRes.ok) {
+        setFaceMatchMsg('[ERR] UNABLE TO FETCH PROFILE PHOTO');
+        return false;
+      }
       const profileBlob = await profileRes.blob();
       const profileImg = await faceapi.bufferToImage(profileBlob);
       const selfieImg = await faceapi.bufferToImage(capturedBlob);
-      const profileDetection = await faceapi.detectSingleFace(profileImg).withFaceLandmarks().withFaceDescriptor();
-      const selfieDetection = await faceapi.detectSingleFace(selfieImg).withFaceLandmarks().withFaceDescriptor();
-      if (!profileDetection || !selfieDetection) return false;
+
+      // Detect face in profile photo — try TinyFaceDetector first, then SSD MobileNet
+      setFaceMatchMsg('SCANNING PROFILE BIOMETRICS...');
+      let profileDetection = await faceapi
+        .detectSingleFace(profileImg, new faceapi.TinyFaceDetectorOptions({ inputSize: 512, scoreThreshold: 0.3 }))
+        .withFaceLandmarks()
+        .withFaceDescriptor();
+
+      if (!profileDetection) {
+        // Fallback to SSD MobileNet which is better for some image types
+        profileDetection = await faceapi
+          .detectSingleFace(profileImg, new faceapi.SsdMobilenetv1Options({ minConfidence: 0.3 }))
+          .withFaceLandmarks()
+          .withFaceDescriptor();
+      }
+
+      if (!profileDetection) {
+        setFaceMatchMsg('[ERR] NO FACE DETECTED IN PROFILE PHOTO');
+        return false;
+      }
+
+      // Detect face in selfie
+      setFaceMatchMsg('SCANNING LIVE BIOMETRICS...');
+      let selfieDetection = await faceapi
+        .detectSingleFace(selfieImg, new faceapi.TinyFaceDetectorOptions({ inputSize: 512, scoreThreshold: 0.3 }))
+        .withFaceLandmarks()
+        .withFaceDescriptor();
+
+      if (!selfieDetection) {
+        selfieDetection = await faceapi
+          .detectSingleFace(selfieImg, new faceapi.SsdMobilenetv1Options({ minConfidence: 0.3 }))
+          .withFaceLandmarks()
+          .withFaceDescriptor();
+      }
+
+      if (!selfieDetection) {
+        setFaceMatchMsg('[ERR] NO FACE DETECTED IN SELFIE — RETAKE');
+        return false;
+      }
+
+      // Compare face descriptors using Euclidean distance
       const distance = faceapi.euclideanDistance(profileDetection.descriptor, selfieDetection.descriptor);
-      return distance <= 0.6;
+      console.log(`[FaceAPI] Euclidean distance: ${distance.toFixed(4)} (threshold: 0.75)`);
+
+      // 0.75 threshold is more forgiving for real-world conditions:
+      // different lighting, angles, expressions, webcam quality
+      if (distance <= 0.75) {
+        return true;
+      } else {
+        setFaceMatchMsg(`[ERR] FACE MISMATCH (confidence: ${((1 - distance) * 100).toFixed(0)}%)`);
+        return false;
+      }
     } catch (e) {
+      console.error('[FaceAPI] Verification error:', e);
+      setFaceMatchMsg('[ERR] BIOMETRIC ANALYSIS FAILED');
       return false;
     }
   };

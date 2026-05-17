@@ -203,7 +203,6 @@ export default function GuardApp() {
       setFaceMatchMsg('[SYS_OK] IDENTITY VERIFIED');
     } else {
       setFaceMatchStatus('failed');
-      setFaceMatchMsg('[ERR] IDENTITY VERIFICATION FAILED');
     }
   };
 
@@ -225,7 +224,6 @@ export default function GuardApp() {
       setFaceMatchMsg('[SYS_OK] IDENTITY VERIFIED');
     } else {
       setFaceMatchStatus('failed');
-      setFaceMatchMsg('[ERR] IDENTITY VERIFICATION FAILED');
     }
   };
 

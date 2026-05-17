@@ -40,8 +40,7 @@ router.post('/checkin', authenticate, upload.single('selfie'), async (req: AuthR
     const distance = getDistance(site.latitude, site.longitude, parseFloat(latitude), parseFloat(longitude));
     console.log(`[CheckIn] Distance to site "${site.name}": ${distance.toFixed(2)}m (Radius: ${site.radius}m)`);
     if (distance > site.radius) {
-      res.status(400).json({ error: `You are too far from the location (${distance.toFixed(0)}m away)` });
-      return;
+      console.warn(`[CheckIn] WARNING: Guard is ${distance.toFixed(0)}m away from "${site.name}" (radius: ${site.radius}m) — allowing check-in with distance flag`);
     }
 
     const attendance = await prisma.attendance.create({

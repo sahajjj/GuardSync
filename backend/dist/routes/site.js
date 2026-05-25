@@ -26,15 +26,45 @@ router.get('/', auth_1.authenticate, (req, res) => __awaiter(void 0, void 0, voi
     }
 }));
 router.post('/', auth_1.authenticate, (0, auth_1.authorize)(['ADMIN', 'MANAGER']), (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { name, address, latitude, longitude, radius } = req.body;
+    const { name, address, latitude, longitude, radius, clientId } = req.body;
     try {
         const site = yield prisma_1.default.site.create({
-            data: { name, address, latitude: parseFloat(latitude), longitude: parseFloat(longitude), radius: parseFloat(radius) }
+            data: { name, address, latitude: parseFloat(latitude), longitude: parseFloat(longitude), radius: parseFloat(radius), clientId: clientId || null }
         });
         res.json(site);
     }
     catch (err) {
         res.status(400).json({ error: 'Failed to create site' });
+    }
+}));
+// Update a site
+router.put('/:id', auth_1.authenticate, (0, auth_1.authorize)(['ADMIN', 'MANAGER']), (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const id = req.params.id;
+    const { name, address, latitude, longitude, radius, clientId } = req.body;
+    try {
+        const site = yield prisma_1.default.site.update({
+            where: { id },
+            data: Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign({}, (name && { name })), (address && { address })), (latitude !== undefined && { latitude: parseFloat(latitude) })), (longitude !== undefined && { longitude: parseFloat(longitude) })), (radius !== undefined && { radius: parseFloat(radius) })), { clientId: clientId || null })
+        });
+        res.json(site);
+    }
+    catch (err) {
+        res.status(400).json({ error: 'Failed to update site' });
+    }
+}));
+// Delete a site
+router.delete('/:id', auth_1.authenticate, (0, auth_1.authorize)(['ADMIN', 'MANAGER']), (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const id = req.params.id;
+    try {
+        yield prisma_1.default.attendance.deleteMany({ where: { siteId: id } });
+        yield prisma_1.default.deployment.deleteMany({ where: { siteId: id } });
+        yield prisma_1.default.report.deleteMany({ where: { siteId: id } });
+        yield prisma_1.default.visitorLog.deleteMany({ where: { siteId: id } });
+        yield prisma_1.default.site.delete({ where: { id } });
+        res.json({ message: 'Site deleted successfully' });
+    }
+    catch (err) {
+        res.status(400).json({ error: 'Failed to delete site' });
     }
 }));
 exports.default = router;

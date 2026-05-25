@@ -46,9 +46,9 @@ router.post('/checkin', auth_1.authenticate, upload.single('selfie'), (req, res)
             return;
         }
         const distance = (0, haversine_1.getDistance)(site.latitude, site.longitude, parseFloat(latitude), parseFloat(longitude));
+        console.log(`[CheckIn] Distance to site "${site.name}": ${distance.toFixed(2)}m (Radius: ${site.radius}m)`);
         if (distance > site.radius) {
-            res.status(400).json({ error: 'Outside geo-fence' });
-            return;
+            console.warn(`[CheckIn] WARNING: Guard is ${distance.toFixed(0)}m away from "${site.name}" (radius: ${site.radius}m) — allowing check-in with distance flag`);
         }
         const attendance = yield prisma_1.default.attendance.create({
             data: {
@@ -66,7 +66,7 @@ router.post('/checkin', auth_1.authenticate, upload.single('selfie'), (req, res)
         res.status(500).json({ error: 'Failed to check in' });
     }
 }));
-router.post('/checkout', auth_1.authenticate, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+router.post('/checkout', auth_1.authenticate, upload.single('selfie'), (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { attendanceId, latitude, longitude } = req.body;
     try {
         const attendance = yield prisma_1.default.attendance.update({
@@ -75,6 +75,7 @@ router.post('/checkout', auth_1.authenticate, (req, res) => __awaiter(void 0, vo
                 checkOutTime: new Date(),
                 checkOutLat: parseFloat(latitude),
                 checkOutLng: parseFloat(longitude),
+                checkOutSelfieUrl: req.file ? `/uploads/${req.file.filename}` : null,
             }
         });
         res.json(attendance);

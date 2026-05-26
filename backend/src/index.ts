@@ -30,7 +30,8 @@ app.use(cors({
     'http://127.0.0.1:3000',
     'http://localhost:3001',
     'https://guard-sync-taupe.vercel.app',
-    'https://guardsync-app.vercel.app'
+    'https://guardsync-app.vercel.app',
+    'https://guardsync-ops.vercel.app'
   ],
   credentials: true
 }));
